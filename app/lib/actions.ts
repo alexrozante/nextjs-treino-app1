@@ -61,24 +61,34 @@ export async function createInvoice(prevState: State, formData: FormData) {
     `;
   } catch (error) {
     // If a database error occurs, return a more specific error.
-    return {
-      message: 'Database Error: Failed to Create Invoice.',
-    };
+    return { message: 'Database Error: Failed to Create Invoice.' };
   }
   // Revalidate the cache for the invoices page and redirect the user.
   revalidatePath('/dashboard/invoices');
   redirect('/dashboard/invoices');
 }
 
-export async function updateInvoice(id: string, formData: FormData) {
-  const { customerId, amount, status } = UpdateInvoice.parse({
+export async function updateInvoice(id: string, prevState: State, formData: FormData) {
+
+  const validatedFields = UpdateInvoice.safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
     status: formData.get('status'),
   });
  
-  const amountInCents = amount * 100;
+  // If form validation fails,   return errors early. Otherwise, continue.
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Update Invoice.',
+    };
+  }
  
+  // Prepare data for insertion into the database
+  // Prepare data for insertion into the database
+  const { customerId, amount, status } = validatedFields.data;
+  const amountInCents = amount * 100;
+
   try {
     await sql`
       UPDATE invoices
@@ -86,16 +96,9 @@ export async function updateInvoice(id: string, formData: FormData) {
       WHERE id = ${id}
     `;
   } catch (error) {
-    return {
-      message: 'Database Error: Failed to Update Invoice',
-    };
+    return { message: 'Database Error: Failed to Update Invoice' };
   } 
   revalidatePath('/dashboard/invoices');
-  // ---
-  // NOTA: redirect() está fora do try...catch porque o método em si, funciona
-  // gerando uma exception que é silenciosamente tratada. Logo, não se deve invocá-la
-  // num bloco try...catch pq não funcionará
-  // ---
   redirect('/dashboard/invoices');
 }
 
