@@ -1,3 +1,9 @@
+/**
+ * For test purposes:
+ * 
+ * user     = user@nextmail.com
+ * password = 123456
+ */
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { authConfig } from './auth.config';
